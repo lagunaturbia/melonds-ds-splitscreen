@@ -1,0 +1,45 @@
+melonDS DS Splitscreen — Descarga DS 1.0
+RetroBat / RetroArch para Windows x64
+
+INSTALACIÓN
+
+Cierra RetroBat y RetroArch. Si tienes una versión anterior que quieres
+conservar, copia su DLL a otra carpeta. El ZIP de Windows contiene dos
+archivos con sus rutas de RetroBat. Extrae la carpeta emulators en la raíz
+de RetroBat y acepta reemplazar los dos archivos.
+
+  emulators/retroarch/cores/melondsds_splitscreen_libretro.dll
+  emulators/retroarch/info/melondsds_splitscreen_libretro.info
+
+En RetroArch, la información del núcleo muestra Splitscreen Download Play 1.0.
+Los archivos de guardado de la Alfa 3 mantienen sus nombres y rutas.
+
+DESCARGA DS
+
+1. Abre el juego desde Nintendo DS Multiplayer. En el selector del núcleo,
+   elige 2, 3 o 4 jugadores, pulsa X para elegir Descarga DS y confirma.
+2. El jugador 1 abre el multijugador del juego y crea la partida. Los
+   invitados arrancan sin cartucho. El núcleo prepara una copia en memoria
+   de su perfil de firmware con el reloj configurado y abre la búsqueda de
+   Descarga DS tras el arranque.
+3. Cuando aparezca el juego en cada invitado, selecciónalo y confirma la
+   descarga. El stick derecho mueve el puntero y R2 toca la pantalla.
+
+Se requiere el mismo firmware arrancable de Nintendo DS o DS Lite y las
+BIOS nativas que se usaban con la Alfa 3. El archivo de firmware original
+se conserva. Si un firmware presenta un menú distinto y queda visible,
+abre Descarga DS con R2. Durante el arranque, A, B o R2 ceden el control
+al mando de ese jugador.
+
+La base es la Alfa 3. Mario Kart DS sigue pendiente de diagnóstico.
+
+COMPILACIÓN DEL CÓDIGO FUENTE
+
+Extrae Codigo_fuente.zip en una carpeta nueva. Ejecuta COMPILAR_WINDOWS.bat
+con doble clic si tienes MSYS2 en C:\msys64. Si está en otra ruta, abre
+MSYS2 UCRT64 en la carpeta que contiene COMPILAR.sh y ejecuta:
+
+  bash COMPILAR.sh
+
+El script imprime dónde quedaron la DLL y el .info. BUILD.txt identifica
+las revisiones originales y SOURCE-REVISIONS.txt enumera las dependencias.

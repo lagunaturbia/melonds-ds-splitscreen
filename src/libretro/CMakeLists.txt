@@ -46,6 +46,7 @@ add_library(melondsds_libretro ${LIBRARY_TYPE}
     console/dsi.hpp
     constants.hpp
     core/core.cpp
+    core/splitscreen.cpp
     core/core.hpp
     core/tasks.cpp
     core/test.cpp
@@ -260,7 +261,7 @@ endif ()
 
 
 # libretro cores do not start with "lib"
-set_target_properties(melondsds_libretro PROPERTIES PREFIX "")
+set_target_properties(melondsds_libretro PROPERTIES PREFIX "" OUTPUT_NAME "melondsds_splitscreen_libretro")
 
 # Some platforms or compilers don't use the expected suffixes for shared libraries
 if (APPLE)

@@ -93,7 +93,8 @@ namespace MelonDsDs {
         const CoreConfig& config,
         const retro::GameInfo* ndsInfo,
         const retro::GameInfo* gbaInfo,
-        const retro::GameInfo* gbaSaveInfo
+        const retro::GameInfo* gbaSaveInfo,
+        void* userdata = nullptr
     );
 
     /// Modify a console instance with core options that are safe to adjust at runtime.

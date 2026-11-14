@@ -1,3 +1,4 @@
+#include <LocalMP.h>
 /*
     Copyright 2023 Jesse Talavera-Greenberg
 
@@ -108,7 +109,9 @@ PUBLIC_SYMBOL void retro_get_system_av_info(struct retro_system_av_info *info) {
 }
 
 PUBLIC_SYMBOL void retro_set_controller_port_device(unsigned port, unsigned device) {
-    MelonDsDs::Core.GetInputState().SetControllerPortDevice(port, device);
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        session->SetController(port, device);
+    }
 }
 
 PUBLIC_SYMBOL [[gnu::hot]] void retro_run(void) {
@@ -129,7 +132,6 @@ PUBLIC_SYMBOL void retro_unload_game(void) {
     // The cleanup handlers for each task will flush data to disk if needed
     retro::task::reset();
     retro::task::wait();
-    retro::task::deinit();
 
     Core.UnloadGame();
 }
@@ -173,7 +175,7 @@ PUBLIC_SYMBOL void retro_get_system_info(struct retro_system_info *info) {
     info->block_extract = false;
     info->library_version = MELONDSDS_VERSION;
     info->need_fullpath = false;
-    info->valid_extensions = "nds|ids|dsi";
+    info->valid_extensions = "nds|ids";
 }
 
 PUBLIC_SYMBOL void retro_reset(void) {
@@ -303,18 +305,24 @@ extern "C" bool MelonDsDs::UpdateOptionVisibility() noexcept {
 }
 
 int Platform::Net_SendPacket(u8* data, int len, void*) {
+    if (MelonDsDs::Core.LocalSession()) return 0;
     ZoneScopedN(TracyFunction);
 
     return MelonDsDs::Core.LanSendPacket(std::span((std::byte*)data, len));
 }
 
 int Platform::Net_RecvPacket(u8* data, void*) {
+    if (MelonDsDs::Core.LocalSession()) return 0;
     ZoneScopedN(TracyFunction);
 
     return MelonDsDs::Core.LanRecvPacket(data);
 }
 
-void Platform::WriteNDSSave(const u8 *savedata, u32 savelen, u32 writeoffset, u32 writelen, void*) {
+void Platform::WriteNDSSave(const u8 *savedata, u32 savelen, u32 writeoffset, u32 writelen, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        session->SaveChanged(userdata);
+        return;
+    }
     ZoneScopedN(TracyFunction);
 
     MelonDsDs::Core.WriteNdsSave(span((const std::byte*)savedata, savelen), writeoffset, writelen);
@@ -327,6 +335,7 @@ void Platform::WriteGBASave(const u8 *savedata, u32 savelen, u32 writeoffset, u3
 }
 
 void Platform::WriteFirmware(const Firmware& firmware, u32 writeoffset, u32 writelen, void*) {
+    if (MelonDsDs::Core.LocalSession()) return;
     ZoneScopedN(TracyFunction);
 
     MelonDsDs::Core.WriteFirmware(firmware, writeoffset, writelen);
@@ -353,20 +362,41 @@ int DeconstructPacket(u8 *data, u64 *timestamp, const std::optional<MelonDsDs::P
     return o_p->Length();
 }
 
-int Platform::MP_SendPacket(u8* data, int len, u64 timestamp, void*) {
+int Platform::MP_SendPacket(u8* data, int len, u64 timestamp, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        const auto player = session->PlayerIndex(userdata);
+        const auto sent = session->Link().SendPacket(player, data, len, timestamp);
+        session->NotifyPacket(player);
+        return sent;
+    }
     return MelonDsDs::Core.MpSendPacket(MelonDsDs::Packet(data, len, timestamp, 0, MelonDsDs::Packet::Type::Other)) ? len : 0;
 }
 
-int Platform::MP_RecvPacket(u8* data, u64* timestamp, void*) {
+int Platform::MP_RecvPacket(u8* data, u64* timestamp, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        return session->Link().RecvPacket(session->PlayerIndex(userdata), data, timestamp);
+    }
     std::optional<MelonDsDs::Packet> o_p = MelonDsDs::Core.MpNextPacket();
     return DeconstructPacket(data, timestamp, o_p);
 }
 
-int Platform::MP_SendCmd(u8* data, int len, u64 timestamp, void*) {
+int Platform::MP_SendCmd(u8* data, int len, u64 timestamp, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        const auto player = session->PlayerIndex(userdata);
+        const auto sent = session->Link().SendCmd(player, data, len, timestamp);
+        session->NotifyPacket(player);
+        return sent;
+    }
     return MelonDsDs::Core.MpSendPacket(MelonDsDs::Packet(data, len, timestamp, 0, MelonDsDs::Packet::Type::Cmd)) ? len : 0;
 }
 
-int Platform::MP_SendReply(u8 *data, int len, u64 timestamp, u16 aid, void*) {
+int Platform::MP_SendReply(u8 *data, int len, u64 timestamp, u16 aid, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        const auto player = session->PlayerIndex(userdata);
+        const auto sent = session->Link().SendReply(player, data, len, timestamp, aid);
+        session->NotifyPacket(player);
+        return sent;
+    }
     // aid is always less than 16,
     // otherwise sending a 16-bit wide aidmask in RecvReplies wouldn't make sense,
     // and neither would this line[1] from melonDS itself.
@@ -378,16 +408,28 @@ int Platform::MP_SendReply(u8 *data, int len, u64 timestamp, u16 aid, void*) {
     return MelonDsDs::Core.MpSendPacket(MelonDsDs::Packet(data, len, timestamp, aid, MelonDsDs::Packet::Type::Reply)) ? len : 0;
 }
 
-int Platform::MP_SendAck(u8* data, int len, u64 timestamp, void*) {
+int Platform::MP_SendAck(u8* data, int len, u64 timestamp, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        const auto player = session->PlayerIndex(userdata);
+        const auto sent = session->Link().SendAck(player, data, len, timestamp);
+        session->NotifyPacket(player);
+        return sent;
+    }
     return MelonDsDs::Core.MpSendPacket(MelonDsDs::Packet(data, len, timestamp, 0, MelonDsDs::Packet::Type::Cmd)) ? len : 0;
 }
 
-int Platform::MP_RecvHostPacket(u8* data, u64 * timestamp, void*) {
+int Platform::MP_RecvHostPacket(u8* data, u64 * timestamp, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        return session->ReceiveHostPacket(session->PlayerIndex(userdata), data, timestamp);
+    }
     std::optional<MelonDsDs::Packet> o_p = MelonDsDs::Core.MpNextPacketBlock();
     return DeconstructPacket(data, timestamp, o_p);
 }
 
-u16 Platform::MP_RecvReplies(u8* packets, u64 timestamp, u16 aidmask, void*) {
+u16 Platform::MP_RecvReplies(u8* packets, u64 timestamp, u16 aidmask, void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        return session->ReceiveReplies(session->PlayerIndex(userdata), packets, timestamp, aidmask);
+    }
     if(!MelonDsDs::Core.MpActive()) {
         return 0;
     }

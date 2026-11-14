@@ -59,6 +59,9 @@ const struct retro_controller_description MelonDsDs::controllers[] = {
 
 const struct retro_controller_info MelonDsDs::ports[] = {
     {controllers, 1},
+    {controllers, 1},
+    {controllers, 1},
+    {controllers, 1},
     {},
 };
 

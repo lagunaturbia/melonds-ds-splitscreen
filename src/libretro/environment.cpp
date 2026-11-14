@@ -371,7 +371,7 @@ void retro::vlog(enum retro_log_level level, const char* fmt, va_list va) noexce
         memset(text, 0, sizeof(text));
         vsnprintf(text, sizeof(text), fmt, va);
         size_t text_length = strlen(text);
-        if (text[text_length - 1] == '\n')
+        if (text_length && text[text_length - 1] == '\n')
             text[text_length - 1] = '\0';
 
         fmt_log(level, "{}", fmt::make_format_args(text));
@@ -808,18 +808,11 @@ PUBLIC_SYMBOL void retro_set_environment(retro_environment_t cb) {
     retro_core_options_update_display_callback update_display_cb {MelonDsDs::UpdateOptionVisibility};
     environment(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_UPDATE_DISPLAY_CALLBACK, &update_display_cb);
 
-    retro_netpacket_callback netpacket_callback {
-        .start = &MelonDsDs::MpStarted,
-        .receive = &MelonDsDs::MpReceived,
-        .stop = &MelonDsDs::MpStopped,
-    };
-    environment(RETRO_ENVIRONMENT_SET_NETPACKET_INTERFACE, &netpacket_callback);
-
     environment(RETRO_ENVIRONMENT_SET_CONTENT_INFO_OVERRIDE, (void*) MelonDsDs::content_overrides);
     environment(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*) MelonDsDs::ports);
 
-    bool yes = true;
-    environment(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &yes);
+    bool achievements = false;
+    environment(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
 
     retro_rumble_interface rumble {nullptr};
     if (environment(RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE, &rumble) && rumble.set_rumble_state) {
@@ -904,8 +897,6 @@ PUBLIC_SYMBOL void retro_set_environment(retro_environment_t cb) {
         }
     }
 
-    environment(RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO, (void*) MelonDsDs::subsystems);
-
     retro_vfs_interface_info vfs { .required_interface_version = PATH_REQUIRED_VFS_VERSION, .iface = nullptr };
     if (environment(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs)) {
         debug("Requested VFS interface version {}, got {}", PATH_REQUIRED_VFS_VERSION, vfs.required_interface_version);
@@ -916,8 +907,6 @@ PUBLIC_SYMBOL void retro_set_environment(retro_environment_t cb) {
         warn("Could not get VFS interface {}, falling back to libretro-common defaults", PATH_REQUIRED_VFS_VERSION);
     }
 
-    yes = true;
-    retro::_supportsNoGameMode |= environment(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &yes);
 }
 
 void retro::NormalizePath(std::span<char> buffer, size_t& pathLength) noexcept {

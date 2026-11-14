@@ -36,6 +36,7 @@
 #include "net/net.hpp"
 #include "net/mp.hpp"
 #include "std/span.hpp"
+#include "splitscreen.hpp"
 
 struct retro_game_info;
 struct retro_system_av_info;
@@ -55,6 +56,9 @@ namespace melonDS {
 }
 
 namespace MelonDsDs {
+    class CoreState;
+    extern CoreState& Core;
+
     class RenderState;
     class config_exception;
 
@@ -104,12 +108,15 @@ namespace MelonDsDs {
         bool UpdateOptionVisibility() noexcept;
 
         const melonDS::NDS* GetConsole() const noexcept { return Console.get(); }
+        Splitscreen* LocalSession() noexcept { return _splitscreen.get(); }
         [[nodiscard]] const InputState& GetInputState() const noexcept { return _inputState; }
         [[nodiscard]] InputState& GetInputState() noexcept { return _inputState; }
         [[nodiscard]] MicrophoneState& GetMicrophoneState() noexcept { return _micState; }
         std::optional<RenderMode> GetRenderMode() const noexcept { return _renderState.GetRenderMode(); }
         const ScreenLayoutData& GetScreenLayoutData() const noexcept { return _screenLayout; }
     private:
+        friend class Splitscreen;
+
         static constexpr auto REGEX_OPTIONS = std::regex_constants::ECMAScript | std::regex_constants::optimize;
         [[gnu::cold]] void ApplyConfig(const CoreConfig& config) noexcept;
 
@@ -164,6 +171,7 @@ namespace MelonDsDs {
         [[gnu::cold]] void InitNdsSave(const NdsCart &nds_cart);
 
         std::unique_ptr<melonDS::NDS> Console = nullptr;
+        std::unique_ptr<Splitscreen> _splitscreen;
         NetState _netState;
         CoreConfig Config {};
         CoreOptionVisibility _optionVisibility {};

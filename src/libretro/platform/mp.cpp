@@ -1,3 +1,4 @@
+#include <LocalMP.h>
 /*
     Copyright 2023 Jesse Talavera-Greenberg
 
@@ -14,6 +15,7 @@
     with melonDS DS. If not, see http://www.gnu.org/licenses/.
 */
 
+#include "../libretro.hpp"
 #include <Platform.h>
 #include "tracy.hpp"
 #include "core/core.hpp"
@@ -86,10 +88,14 @@ bool MelonDsDs::CoreState::MpActive() const noexcept {
 }
 
 // Not much we can do in Begin and End
-void Platform::MP_Begin(void*) {
-    ZoneScopedN(TracyFunction);
+void Platform::MP_Begin(void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        session->Link().Begin(session->PlayerIndex(userdata));
+    }
 }
 
-void Platform::MP_End(void*) {
-    ZoneScopedN(TracyFunction);
+void Platform::MP_End(void* userdata) {
+    if (auto* session = MelonDsDs::Core.LocalSession()) {
+        session->Link().End(session->PlayerIndex(userdata));
+    }
 }

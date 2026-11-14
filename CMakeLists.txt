@@ -104,7 +104,7 @@ include(cmake/FetchDependencies.cmake)
 include(cmake/ConfigureFeatures.cmake)
 include(cmake/ConfigureDependencies.cmake)
 
-set(MELONDSDS_NAME "${CMAKE_PROJECT_NAME}")
+set(MELONDSDS_NAME "melonDS DS Splitscreen")
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     set(MELONDSDS_VERSION "${CMAKE_PROJECT_VERSION}")
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
@@ -115,8 +115,9 @@ else ()
     set(MELONDSDS_VERSION "v${CMAKE_PROJECT_VERSION}-nogit-${CMAKE_BUILD_TYPE}-upstream-${MELONDS_REPOSITORY_TAG}")
 endif()
 
+string(APPEND MELONDSDS_VERSION " (Splitscreen Download Play 1.0)")
 message(STATUS "${MELONDSDS_NAME} version string: '${MELONDSDS_VERSION}'")
-configure_file("${CMAKE_SOURCE_DIR}/melondsds_libretro.info.in" "${CMAKE_CURRENT_BINARY_DIR}/melondsds_libretro.info")
+configure_file("${CMAKE_SOURCE_DIR}/melondsds_libretro.info.in" "${CMAKE_CURRENT_BINARY_DIR}/melondsds_splitscreen_libretro.info")
 
 # Formerly off by default due to a bug that has since been fixed.
 # This option may be removed in the future.

@@ -104,6 +104,7 @@ MelonDsDs::CoreState::~CoreState() noexcept {
 }
 
 retro_system_av_info MelonDsDs::CoreState::GetSystemAvInfo() const noexcept {
+    if (_splitscreen) return _splitscreen->AvInfo();
 #ifndef NDEBUG
     if (!_messageScreen) {
         retro_assert(Console != nullptr);
@@ -127,6 +128,7 @@ retro_system_av_info MelonDsDs::CoreState::GetSystemAvInfo() const noexcept {
 }
 
 void MelonDsDs::CoreState::UnloadGame() noexcept {
+    _splitscreen.reset();
     // Just in case the frontend forgets to stop the rumbling
     _inputState.StopRumble();
 
@@ -178,6 +180,10 @@ void MelonDsDs::CoreState::UninstallDsiwareIfNeeded() noexcept {
 }
 
 void MelonDsDs::CoreState::Run() noexcept {
+    if (_splitscreen) {
+        _splitscreen->Run();
+        return;
+    }
     ZoneScopedN(TracyFunction);
 
     if (_renderState.SoftwareFallbackRequested()) [[unlikely]] {
@@ -285,6 +291,10 @@ void MelonDsDs::CoreState::Run() noexcept {
 }
 
 void MelonDsDs::CoreState::Reset() {
+    if (_splitscreen) {
+        _splitscreen->Reset();
+        return;
+    }
     ZoneScopedN(TracyFunction);
 
     if (_messageScreen) {
@@ -619,6 +629,11 @@ void MelonDsDs::CoreState::DestroyRenderState() {
 bool MelonDsDs::CoreState::LoadGame(unsigned type, std::span<const retro_game_info> game) noexcept try {
     ZoneScopedN(TracyFunction);
 
+    if (type != MELONDSDS_GAME_TYPE_NDS || game.size() != 1) {
+        throw content_exception("Load a Nintendo DS cartridge to start local multiplayer.");
+    }
+    _splitscreen.reset();
+    _ndsInfo.reset();
     InitContent(type, game);
 
     // ...then load the game.
@@ -631,86 +646,20 @@ bool MelonDsDs::CoreState::LoadGame(unsigned type, std::span<const retro_game_in
         ParseConfig(Config);
         _optionVisibility.Update();
     }
-    ApplyConfig(Config);
-
-    _syncClock = Config.StartTimeMode() == StartTimeMode::Sync;
-    retro_assert(Console == nullptr);
-    // Instantiates the console with games and save data installed
-    Console = CreateConsole(
-        *this,
-        Config,
-        _ndsInfo ? &*_ndsInfo : nullptr,
-        _gbaInfo ? &*_gbaInfo : nullptr,
-        _gbaSaveInfo ? &*_gbaSaveInfo : nullptr
-    );
-
-    retro_assert(Console != nullptr);
-    melonDS::NDS::Current = Console.get();
-    RegisterMemoryMap();
-
-    if (melonDS::NDSCart::CartCommon* cart = Console->GetNDSCart()) {
-        // A title installed onto the NAND isn't inserted into the cart slot,
-        // so it can only be in the slot if the player forced DS mode.
-        // Homebrew flagged as DSiWare is never installed,
-        // so it may legitimately be in the slot in either mode.
-        retro_assert(
-            !RequiresNandInstall(cart->GetHeader()) ||
-            static_cast<ConsoleType>(Console->ConsoleType) == ConsoleType::DS
-        );
-        InitNdsSave(*cart);
-    }
-
-    if (_gbaInfo && _gbaSaveInfo && Console->GetGBASave() && Console->GetGBASaveLength()) {
-        // If we inserted a GBA ROM with SRAM...
-        _gbaSaveManager = std::make_optional<sram::SaveManager>(Console->GetGBASaveLength());
-        retro::task::push(FlushGbaSramTask());
-        retro::debug("Initialized and loaded GBA SRAM, and started GBA SRAM flush task.");
-    }
-    else {
-        retro::info("No GBA SRAM was provided.");
-    }
-
-    // Let the input system know what's in Slot-2, if anything.
-    _inputState.SetSlot2Input(Console->GetGBACart());
-    _inputState.SetConfig(Config);
-
-    if (retro::supports_power_status()) {
-        retro::task::push(PowerStatusUpdateTask());
-    }
-
-    if (optional<unsigned> version = retro::message_interface_version(); version && version >= 1) {
-        // If the frontend supports on-screen notifications...
-        retro::task::push(OnScreenDisplayTask());
-    }
-
-    retro::environment(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, (void*)&MelonDsDs::input_descriptors);
-
-    InitFlushFirmwareTask();
-
-    if (std::optional<RenderMode> mode = _renderState.GetRenderMode(); mode && UsesOpenGl(*mode)) {
-        retro::info("Deferring initialization until the OpenGL context is ready");
-        _deferredInitializationPending = true;
-    }
-    else {
-        retro::info("No need to defer initialization, proceeding now");
-        StartConsole();
-    }
-
+    _splitscreen = std::make_unique<Splitscreen>(*this, Config, *_ndsInfo);
     return true;
 }
 catch (const config_exception& e) {
     retro::error("{}", e.what());
-
-    return InitErrorScreen(e);
+    retro::set_error_message(e.what());
+    return false;
 }
 catch (const content_exception& e) {
-    // Thrown for invalid ROMs
     retro::error("{}", e.what());
     retro::set_error_message(e.what());
     return false;
 }
 catch (const emulator_exception& e) {
-    // Thrown for invalid ROMs
     retro::error("{}", e.what());
     retro::set_error_message(e.user_message());
     return false;
@@ -725,7 +674,7 @@ catch (...) {
     return false;
 }
 
-// Reset for the next time
+
 void MelonDsDs::CoreState::UninstallDsiware(melonDS::DSi_NAND::NANDImage& nand) noexcept {
     ZoneScopedN(TracyFunction);
 
@@ -954,6 +903,7 @@ bool MelonDsDs::CoreState::UpdateOptionVisibility() noexcept {
 /// RetroArch may try to call this function before the ROM is installed
 /// if rewind mode is enabled
 size_t MelonDsDs::CoreState::SerializeSize() const noexcept {
+    if (_splitscreen) return 0;
     ZoneScopedN(TracyFunction);
     if (_messageScreen)
         return 0;
@@ -1001,6 +951,7 @@ size_t MelonDsDs::CoreState::SerializeSize() const noexcept {
 }
 
 bool MelonDsDs::CoreState::Serialize(std::span<std::byte> data) const noexcept {
+    if (_splitscreen) return false;
     ZoneScopedN(TracyFunction);
     if (_messageScreen)
         return false;
@@ -1041,6 +992,7 @@ bool MelonDsDs::CoreState::Serialize(std::span<std::byte> data) const noexcept {
 }
 
 bool MelonDsDs::CoreState::Unserialize(std::span<const std::byte> data) noexcept {
+    if (_splitscreen) return false;
     ZoneScopedN(TracyFunction);
     if (_messageScreen)
         return false;
@@ -1164,6 +1116,7 @@ void MelonDsDs::CoreState::RegisterMemoryMap() const noexcept {
 }
 
 std::byte* MelonDsDs::CoreState::GetMemoryData(unsigned id) noexcept {
+    if (_splitscreen) return nullptr;
     ZoneScopedN(TracyFunction);
     if (_messageScreen)
         return nullptr;
@@ -1180,6 +1133,7 @@ std::byte* MelonDsDs::CoreState::GetMemoryData(unsigned id) noexcept {
 }
 
 size_t MelonDsDs::CoreState::GetMemorySize(unsigned id) const noexcept {
+    if (_splitscreen) return 0;
     if (_messageScreen)
         return 0;
 

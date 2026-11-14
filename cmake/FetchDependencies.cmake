@@ -1,3 +1,13 @@
+# Use bundled source snapshots when present.
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/../vendor/melonds")
+    set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}/_deps" CACHE PATH "")
+    list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../vendor/melonds/cmake" "${CMAKE_CURRENT_LIST_DIR}/../vendor/embed-binaries/cmake")
+    foreach(dep IN ITEMS melonds libretro-common embed-binaries glm zlib libslirp pntr fmt yamc span-lite date)
+        string(TOUPPER "${dep}" dep_key)
+        set(FETCHCONTENT_SOURCE_DIR_${dep_key} "${CMAKE_CURRENT_LIST_DIR}/../vendor/${dep}")
+    endforeach()
+endif()
+
 macro(define_git_dependency_vars name default_url default_tag)
     string(TOUPPER ${name} VAR_NAME)
     string(MAKE_C_IDENTIFIER ${VAR_NAME} VAR_NAME)

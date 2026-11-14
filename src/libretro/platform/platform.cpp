@@ -14,6 +14,7 @@
     with melonDS DS. If not, see http://www.gnu.org/licenses/.
 */
 
+#include "../libretro.hpp"
 #include <array>
 #include <cstdarg>
 #include <cstdio>
@@ -28,6 +29,7 @@
 #include <retro_endianness.h>
 
 #include "../environment.hpp"
+#include "../core/core.hpp"
 #include "../config/config.hpp"
 #include "../format.hpp"
 #include "retro/scaler.hpp"
@@ -39,6 +41,7 @@ constexpr unsigned DSI_CAMERA_WIDTH = 640;
 constexpr unsigned DSI_CAMERA_HEIGHT = 480;
 
 void Platform::SignalStop(Platform::StopReason reason, void* userdata) {
+    if (MelonDsDs::Core.LocalSession()) return;
     retro::debug("Platform::SignalStop({})\n", reason);
     switch (reason) {
         case StopReason::BadExceptionRegion:

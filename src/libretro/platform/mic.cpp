@@ -14,6 +14,7 @@
     with melonDS DS. If not, see http://www.gnu.org/licenses/.
 */
 
+#include "../libretro.hpp"
 #include <Platform.h>
 
 #include "../core/core.hpp"
@@ -37,6 +38,7 @@ void melonDS::Platform::Mic_Stop(void* userdata)
 int melonDS::Platform::Mic_ReadInput(s16* data, int maxlength, void* userdata)
 {
     ZoneScopedN(TracyFunction);
+    if (MelonDsDs::Core.LocalSession()) return 0;
     if (!data || maxlength <= 0)
         return 0;
 

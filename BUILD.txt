@@ -1,0 +1,16 @@
+Unpack source.tar.gz. From the extracted source directory, in an MSYS2
+MinGW x64 shell with GCC, Git, CMake and Ninja installed, run:
+
+    cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENGL=OFF -DENABLE_JIT=OFF -DENABLE_LTO_RELEASE=OFF
+    cmake --build build --parallel
+
+The Windows core is build/src/libretro/melondsds_splitscreen_libretro.dll.
+The accompanying core info is build/melondsds_splitscreen_libretro.info.
+
+Upstream source for this build:
+- https://github.com/JesseTG/melonds-ds @ f394adbacb5722ee97c1b37c8064da9a25818310
+- https://github.com/JesseTG/melonDS @ 16f127dbb587a73371827ce79689c5d237c4b59b
+
+Each bundled dependency is an unmodified Git archive of the resolved
+revision, except for the LocalMP changes in melonDS. Revision identifiers
+for all dependencies are listed in SOURCE-REVISIONS.txt.

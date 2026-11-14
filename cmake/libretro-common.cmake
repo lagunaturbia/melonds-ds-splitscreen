@@ -10,6 +10,7 @@ target_sources(libretro-common PRIVATE
     ${libretro-common_SOURCE_DIR}/audio/resampler/drivers/sinc_resampler.c
     ${libretro-common_SOURCE_DIR}/compat/compat_fnmatch.c
     ${libretro-common_SOURCE_DIR}/compat/compat_posix_string.c
+    ${libretro-common_SOURCE_DIR}/compat/compat_strcasestr.c
     ${libretro-common_SOURCE_DIR}/compat/compat_strldup.c
     ${libretro-common_SOURCE_DIR}/compat/fopen_utf8.c
     ${libretro-common_SOURCE_DIR}/encodings/encoding_base64.c
@@ -26,12 +27,15 @@ target_sources(libretro-common PRIVATE
     ${libretro-common_SOURCE_DIR}/file/nbio/nbio_stdio.c
     ${libretro-common_SOURCE_DIR}/file/retro_dirent.c
     ${libretro-common_SOURCE_DIR}/formats/bmp/rbmp_encode.c
+    ${libretro-common_SOURCE_DIR}/formats/data_transfer.c
     ${libretro-common_SOURCE_DIR}/formats/image_texture.c
     ${libretro-common_SOURCE_DIR}/formats/image_transfer.c
     ${libretro-common_SOURCE_DIR}/formats/json/rjson.c
     ${libretro-common_SOURCE_DIR}/formats/logiqx_dat/logiqx_dat.c
     ${libretro-common_SOURCE_DIR}/formats/png/rpng.c
+    ${libretro-common_SOURCE_DIR}/formats/png/rpng_apng.c
     ${libretro-common_SOURCE_DIR}/formats/png/rpng_encode.c
+    ${libretro-common_SOURCE_DIR}/formats/xml/rxml.c
     ${libretro-common_SOURCE_DIR}/gfx/scaler/pixconv.c
     ${libretro-common_SOURCE_DIR}/gfx/scaler/scaler.c
     ${libretro-common_SOURCE_DIR}/gfx/scaler/scaler_filter.c

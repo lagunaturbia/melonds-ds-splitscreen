@@ -83,12 +83,13 @@ namespace MelonDsDs {
         const retro::GameInfo* ndsInfo,
         const retro::GameInfo* gbaInfo,
         const retro::GameInfo* gbaSaveInfo,
-        CoreState& state
+        CoreState& state,
+        void* userdata
     );
 
     static DSiArgs GetDSiArgs(const CoreConfig& config, const retro::GameInfo* ndsInfo);
     static void ApplyCommonArgs(const CoreConfig& config, melonDS::NDSArgs& args) noexcept;
-    static unique_ptr<melonDS::NDSCart::CartCommon> LoadNdsCart(const CoreConfig& config, const retro::GameInfo& ndsInfo);
+    static unique_ptr<melonDS::NDSCart::CartCommon> LoadNdsCart(const CoreConfig& config, const retro::GameInfo& ndsInfo, void* userdata = nullptr);
     static unique_ptr<melonDS::GBACart::CartCommon> LoadGbaCart(const retro::GameInfo& gbaInfo, const retro::GameInfo* gbaSaveInfo);
     static std::pair<unique_ptr<uint8_t[]>, size_t> LoadGbaSram(const retro::GameInfo& gbaSaveInfo);
     static void InstallDsiware(NANDMount& mount, const retro::GameInfo& nds_info);
@@ -260,7 +261,8 @@ std::unique_ptr<melonDS::NDS> MelonDsDs::CreateConsole(
     const CoreConfig& config,
     const retro::GameInfo* ndsInfo,
     const retro::GameInfo* gbaInfo,
-    const retro::GameInfo* gbaSaveInfo
+    const retro::GameInfo* gbaSaveInfo,
+    void* userdata
 ) {
     ZoneScopedN(TracyFunction);
     // The header is only trustworthy if the whole of it was actually loaded;
@@ -300,9 +302,9 @@ std::unique_ptr<melonDS::NDS> MelonDsDs::CreateConsole(
         return console;
     }
     else {
-        NDSArgs args = GetNdsArgs(config, ndsInfo, gbaInfo, gbaSaveInfo, state);
+        NDSArgs args = GetNdsArgs(config, ndsInfo, gbaInfo, gbaSaveInfo, state, userdata);
         // If we're in DS mode...
-        unique_ptr<melonDS::NDS> console = std::make_unique<melonDS::NDS>(std::move(args.args), &state);
+        unique_ptr<melonDS::NDS> console = std::make_unique<melonDS::NDS>(std::move(args.args), userdata ? userdata : &state);
         console->SetNDSCart(std::move(args.ndsCart));
         console->SetGBACart(std::move(args.gbaCart));
         return console;
@@ -326,7 +328,8 @@ static MelonDsDs::NDSArgs MelonDsDs::GetNdsArgs(
     const retro::GameInfo* ndsInfo,
     const retro::GameInfo* gbaInfo,
     const retro::GameInfo* gbaSaveInfo,
-    CoreState& state
+    CoreState& state,
+    void* userdata
 ) {
     ZoneScopedN(TracyFunction);
 
@@ -413,7 +416,7 @@ static MelonDsDs::NDSArgs MelonDsDs::GetNdsArgs(
     ndsargs.args.Firmware = std::move(*firmware);
 
     if (ndsInfo) {
-        ndsargs.ndsCart = LoadNdsCart(config, *ndsInfo);
+        ndsargs.ndsCart = LoadNdsCart(config, *ndsInfo, userdata);
         const uint8_t* romdata = ndsargs.ndsCart->GetROM();
         const NDSHeader &header = ndsargs.ndsCart->GetHeader();
 
@@ -669,7 +672,7 @@ static void MelonDsDs::ApplyCommonArgs(const CoreConfig& config, melonDS::NDSArg
 #endif
 }
 
-static unique_ptr<melonDS::NDSCart::CartCommon> MelonDsDs::LoadNdsCart(const CoreConfig& config, const retro::GameInfo& ndsInfo) {
+static unique_ptr<melonDS::NDSCart::CartCommon> MelonDsDs::LoadNdsCart(const CoreConfig& config, const retro::GameInfo& ndsInfo, void* userdata) {
     ZoneScopedN(TracyFunction);
     span<const std::byte> rom = ndsInfo.GetData();
 
@@ -700,7 +703,7 @@ static unique_ptr<melonDS::NDSCart::CartCommon> MelonDsDs::LoadNdsCart(const Cor
     std::unique_ptr<melonDS::NDSCart::CartCommon> cart;
     {
         ZoneScopedN("NDSCart::ParseROM");
-        cart = melonDS::NDSCart::ParseROM(reinterpret_cast<const uint8_t*>(rom.data()), rom.size(), nullptr, std::move(sdargs));
+        cart = melonDS::NDSCart::ParseROM(reinterpret_cast<const uint8_t*>(rom.data()), rom.size(), userdata, std::move(sdargs));
     }
 
     if (!cart) {
