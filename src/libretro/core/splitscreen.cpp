@@ -21,6 +21,8 @@
 
 #include "config/config.hpp"
 #include "config/console.hpp"
+#include "config/constants.hpp"
+#include "config/parse.hpp"
 #include "constants.hpp"
 #include "core.hpp"
 #include "environment.hpp"
@@ -285,7 +287,7 @@ struct Splitscreen::PlayerMenu {
         };
 
         pntr_clear_background(canvas.get(), bg);
-        center(title.get(), "Jugadores", Width / 2, 84, ink);
+        center(title.get(), "Select Players", Width / 2, 84, ink);
         for (unsigned players = MinPlayers; players <= MaxPlayers; ++players) {
             const int x = 60 + static_cast<int>(players - MinPlayers) * 136;
             const bool active = players == selected;
@@ -294,14 +296,15 @@ struct Splitscreen::PlayerMenu {
                 active ? selectedCard : card);
             center(title.get(), label, x + 60, 178, active ? bg : ink);
         }
-        center(body.get(), downloadPlay ? "Descarga DS" : "Multitarjeta", Width / 2, 252, ink);
-        center(body.get(), "X: cambiar modo    A / START: jugar", Width / 2, 296, hint);
+        center(body.get(), downloadPlay ? "Download Play" : "Multi-Card", Width / 2, 252, ink);
+        center(body.get(), "LEFT / RIGHT: select players", Width / 2, 288, hint);
+        center(body.get(), "X: switch mode    A / START: play", Width / 2, 310, hint);
         retro::video_refresh(canvas->data, Width, Height, Width * sizeof(uint32_t));
     }
 };
 
-Splitscreen::Splitscreen(CoreState& core, const CoreConfig& config, const retro::GameInfo& game)
-    : _core(core), _config(config), _game(game)
+Splitscreen::Splitscreen(CoreState& core, const CoreConfig& coreConfig, const retro::GameInfo& game)
+    : _core(core), _config(coreConfig), _game(game)
 {
     const auto rom = game.GetData();
     if (rom.size() < sizeof(melonDS::NDSHeader)) {
@@ -314,6 +317,9 @@ Splitscreen::Splitscreen(CoreState& core, const CoreConfig& config, const retro:
     if (rom.size() > 512u * 1024 * 1024) {
         throw content_exception("This file exceeds the maximum Nintendo DS cartridge size.");
     }
+    _playerCount = ParseIntegerInRange(retro::get_variable(config::splitscreen::PLAYER_COUNT),
+        MinPlayers, MaxPlayers).value_or(MinPlayers);
+    _downloadPlay = retro::get_variable(config::splitscreen::LINK_MODE) == config::splitscreen::DOWNLOAD_PLAY;
     _menu = std::make_unique<PlayerMenu>();
 }
 
@@ -364,7 +370,7 @@ void Splitscreen::StartPlayers() {
 #endif
     config.SetSlot2Device(Slot2Device::Auto);
     if (_downloadPlay && config.SysfileMode() != SysfileMode::Native) {
-        throw content_exception("Descarga DS requiere BIOS nativas y firmware de Nintendo DS arrancable.");
+        throw content_exception("Download Play requires native Nintendo DS BIOS files and bootable firmware.");
     }
 
     const auto crc = melonDS::CRC32(reinterpret_cast<const melonDS::u8*>(rom.data()), static_cast<int>(rom.size()));
@@ -375,7 +381,7 @@ void Splitscreen::StartPlayers() {
         const retro::GameInfo* content = hasCart ? &_game : nullptr;
         player->console = CreateConsole(_core, config, content, nullptr, nullptr, player.get());
         if (!hasCart && player->console->NeedsDirectBoot()) {
-            throw content_exception("Descarga DS requiere BIOS nativas y firmware de Nintendo DS arrancable.");
+            throw content_exception("Download Play requires native Nintendo DS BIOS files and bootable firmware.");
         }
         if (const char* basename = path_basename(_game.GetPath().data())) player->romName = basename;
         if (player->romName.empty()) player->romName = "game.nds";
