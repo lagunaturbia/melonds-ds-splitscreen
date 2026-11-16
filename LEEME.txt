@@ -1,23 +1,39 @@
-melonDS DS Splitscreen — Descarga DS 1.0
+melonDS DS Splitscreen 1.1
 RetroBat / RetroArch para Windows x64
 
 INSTALACIÓN
 
 Cierra RetroBat y RetroArch. Si tienes una versión anterior que quieres
-conservar, copia su DLL a otra carpeta. El ZIP de Windows contiene dos
-archivos con sus rutas de RetroBat. Extrae la carpeta emulators en la raíz
-de RetroBat y acepta reemplazar los dos archivos.
+conservar, copia su DLL y su .info a otra carpeta. Copia la carpeta
+emulators del ZIP a la raíz de RetroBat y acepta reemplazar los dos
+archivos. En RetroArch independiente, coloca cada archivo en la carpeta
+configurada para núcleos e información de núcleos.
 
   emulators/retroarch/cores/melondsds_splitscreen_libretro.dll
   emulators/retroarch/info/melondsds_splitscreen_libretro.info
 
-En RetroArch, la información del núcleo muestra Splitscreen Download Play 1.0.
-Los archivos de guardado de la Alfa 3 mantienen sus nombres y rutas.
+En RetroArch, la información del núcleo muestra Splitscreen 1.1.
+Se usan los mismos archivos de guardado de la versión 1.0.
+
+SELECTOR Y OPCIONES DEL NÚCLEO
+
+Al abrir un juego aparece «Select Players». Usa izquierda/derecha para
+elegir 2, 3 o 4 consolas, X para alternar entre Multi-Card y Download Play,
+y A o START para comenzar.
+
+En RetroArch, abre Menú rápido > Opciones del núcleo > Local Multiplayer.
+Number of Players y Local Multiplayer Mode fijan los valores iniciales
+del selector (2 y Multi-Card por defecto). Guarda los ajustes y vuelve a
+abrir el juego para aplicarlos. Puedes cambiarlos con el mando en el
+selector para esa partida.
+
+JIT Recompiler está en la categoría CPU Emulation. Viene desactivado
+por defecto. Si lo activas, vuelve a abrir el juego para probarlo.
 
 DESCARGA DS
 
 1. Abre el juego desde Nintendo DS Multiplayer. En el selector del núcleo,
-   elige 2, 3 o 4 jugadores, pulsa X para elegir Descarga DS y confirma.
+   elige 2, 3 o 4 jugadores, pulsa X si necesitas elegir Download Play y confirma.
 2. El jugador 1 abre el multijugador del juego y crea la partida. Los
    invitados arrancan sin cartucho. El núcleo prepara una copia en memoria
    de su perfil de firmware con el reloj configurado y abre la búsqueda de
@@ -26,20 +42,24 @@ DESCARGA DS
    descarga. El stick derecho mueve el puntero y R2 toca la pantalla.
 
 Se requiere el mismo firmware arrancable de Nintendo DS o DS Lite y las
-BIOS nativas que se usaban con la Alfa 3. El archivo de firmware original
+BIOS nativas que se usaban con la versión 1.0. El archivo de firmware original
 se conserva. Si un firmware presenta un menú distinto y queda visible,
 abre Descarga DS con R2. Durante el arranque, A, B o R2 ceden el control
 al mando de ese jugador.
 
-La base es la Alfa 3. Mario Kart DS sigue pendiente de diagnóstico.
+La base es la versión pública 1.0. Mario Kart DS sigue pendiente de diagnóstico.
 
 COMPILACIÓN DEL CÓDIGO FUENTE
 
-Extrae Codigo_fuente.zip en una carpeta nueva. Ejecuta COMPILAR_WINDOWS.bat
+Abre la carpeta Codigo_fuente incluida en el ZIP. Ejecuta COMPILAR_WINDOWS.bat
 con doble clic si tienes MSYS2 en C:\msys64. Si está en otra ruta, abre
 MSYS2 UCRT64 en la carpeta que contiene COMPILAR.sh y ejecuta:
 
   bash COMPILAR.sh
+
+Si faltan las herramientas, en MSYS2 UCRT64 puedes instalarlas así:
+
+  pacman -S --needed git mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
 
 El script imprime dónde quedaron la DLL y el .info. BUILD.txt identifica
 las revisiones originales y SOURCE-REVISIONS.txt enumera las dependencias.

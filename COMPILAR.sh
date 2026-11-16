@@ -15,7 +15,7 @@ done
 
 build_dir="build-${MSYSTEM,,}"
 cmake -S . -B "$build_dir" -G Ninja -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_OPENGL=OFF -DENABLE_JIT=OFF -DENABLE_LTO_RELEASE=OFF
+    -DENABLE_OPENGL=OFF -DENABLE_JIT=ON -DENABLE_LTO_RELEASE=OFF
 cmake --build "$build_dir" --parallel
 
 printf '\nDLL: %s\nINFO: %s\n' \

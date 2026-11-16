@@ -115,7 +115,7 @@ else ()
     set(MELONDSDS_VERSION "v${CMAKE_PROJECT_VERSION}-nogit-${CMAKE_BUILD_TYPE}-upstream-${MELONDS_REPOSITORY_TAG}")
 endif()
 
-string(APPEND MELONDSDS_VERSION " (Splitscreen Download Play 1.0)")
+string(APPEND MELONDSDS_VERSION " (Splitscreen 1.1)")
 message(STATUS "${MELONDSDS_NAME} version string: '${MELONDSDS_VERSION}'")
 configure_file("${CMAKE_SOURCE_DIR}/melondsds_libretro.info.in" "${CMAKE_CURRENT_BINARY_DIR}/melondsds_splitscreen_libretro.info")
 

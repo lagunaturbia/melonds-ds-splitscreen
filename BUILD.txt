@@ -1,11 +1,13 @@
-Unpack source.tar.gz. From the extracted source directory, in an MSYS2
-MinGW x64 shell with GCC, Git, CMake and Ninja installed, run:
+Extract Codigo_fuente in a new folder. From the extracted source directory,
+in an MSYS2 UCRT64 or MINGW64 shell with GCC, Git, CMake and Ninja installed,
+run bash COMPILAR.sh. The equivalent commands are:
 
-    cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENGL=OFF -DENABLE_JIT=OFF -DENABLE_LTO_RELEASE=OFF
+    cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENGL=OFF -DENABLE_JIT=ON -DENABLE_LTO_RELEASE=OFF
     cmake --build build --parallel
 
 The Windows core is build/src/libretro/melondsds_splitscreen_libretro.dll.
 The accompanying core info is build/melondsds_splitscreen_libretro.info.
+JIT support is built in. The runtime core option defaults to disabled.
 
 Upstream source for this build:
 - https://github.com/JesseTG/melonds-ds @ f394adbacb5722ee97c1b37c8064da9a25818310
