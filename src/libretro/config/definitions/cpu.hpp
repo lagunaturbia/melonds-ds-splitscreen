@@ -29,8 +29,8 @@ namespace MelonDsDs::config::definitions {
         nullptr,
         "Recompiles emulated machine code into native code as it runs, "
         "considerably improving performance over plain interpretation. "
-        "Takes effect at next restart. "
-        "If unsure, leave enabled.",
+        "Takes effect when you reopen content. "
+        "Experimental for local multiplayer.",
         nullptr,
         MelonDsDs::config::cpu::CATEGORY,
         {
@@ -38,7 +38,7 @@ namespace MelonDsDs::config::definitions {
             {MelonDsDs::config::values::ENABLED, nullptr},
             {nullptr, nullptr},
         },
-        MelonDsDs::config::values::ENABLED
+        MelonDsDs::config::values::DISABLED
     };
 
     constexpr retro_core_option_v2_definition JitBlockSize {

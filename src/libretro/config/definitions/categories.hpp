@@ -25,6 +25,11 @@
 namespace MelonDsDs::config::definitions {
     constexpr std::array OptionCategories {
         retro_core_option_v2_category {
+            splitscreen::CATEGORY,
+            "Local Multiplayer",
+            "Choose the initial settings for the player selection screen."
+        },
+        retro_core_option_v2_category {
             MelonDsDs::config::system::CATEGORY,
             "System",
             "Change system settings."
