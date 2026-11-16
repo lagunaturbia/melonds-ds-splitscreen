@@ -195,14 +195,11 @@ bool MelonDsDs::CoreOptionVisibility::Update() noexcept {
     // Show/hide JIT core options
     bool oldShowJitOptions = ShowJitOptions;
     optional<bool> jitEnabled = MelonDsDs::ParseBoolean(get_variable(cpu::JIT_ENABLE));
-    ShowJitOptions = !jitEnabled || *jitEnabled;
+    ShowJitOptions = jitEnabled.value_or(false);
     if (!VisibilityInitialized || ShowJitOptions != oldShowJitOptions) {
         set_option_visible(cpu::JIT_BLOCK_SIZE, ShowJitOptions);
         set_option_visible(cpu::JIT_BRANCH_OPTIMISATIONS, ShowJitOptions);
         set_option_visible(cpu::JIT_LITERAL_OPTIMISATIONS, ShowJitOptions);
-#ifdef HAVE_JIT_FASTMEM
-        set_option_visible(cpu::JIT_FAST_MEMORY, ShowJitOptions);
-#endif
         updated = true;
     }
 #endif

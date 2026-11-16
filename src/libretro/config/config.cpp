@@ -402,12 +402,7 @@ static void MelonDsDs::config::ParseJitOptions(CoreConfig& config) noexcept {
     ZoneScopedN(TracyFunction);
     using retro::get_variable;
 
-    if (optional<bool> value = ParseBoolean(get_variable(cpu::JIT_ENABLE))) {
-        config.SetJitEnable(*value);
-    } else {
-        retro::warn("Failed to get value for {}; defaulting to {}", cpu::JIT_ENABLE, values::ENABLED);
-        config.SetJitEnable(true);
-    }
+    config.SetJitEnable(ParseBoolean(get_variable(cpu::JIT_ENABLE)).value_or(false));
 
     if (optional<unsigned> value = ParseIntegerInRange(get_variable(cpu::JIT_BLOCK_SIZE), 1, 32)) {
         config.SetMaxBlockSize(*value);
@@ -431,17 +426,7 @@ static void MelonDsDs::config::ParseJitOptions(CoreConfig& config) noexcept {
     }
 
 #ifdef HAVE_JIT_FASTMEM
-    if (optional<bool> value = ParseBoolean(get_variable(cpu::JIT_FAST_MEMORY))) {
-        config.SetFastMemory(*value);
-    } else {
-#ifdef NDEBUG
-        retro::warn("Failed to get value for {}; defaulting to {}", cpu::JIT_FAST_MEMORY, values::ENABLED);
-        config.SetFastMemory(true);
-#else
-        retro::warn("Failed to get value for {}; defaulting to {}", cpu::JIT_FAST_MEMORY, values::DISABLED);
-        config.SetFastMemory(false);
-#endif
-    }
+    config.SetFastMemory(false);
 #endif
 #endif
 }

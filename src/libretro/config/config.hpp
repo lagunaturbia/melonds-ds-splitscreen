@@ -465,12 +465,12 @@ namespace MelonDsDs {
         MelonDsDs::RumbleMotorType _rumbleMotors = *ParseRumbleMotorType(config::definitions::RumbleType.default_value);
         bool _useRealLightSensor = *ParseBoolean(config::definitions::SolarSensorMode.default_value);
 #ifdef JIT_ENABLED
-        bool _jitEnable;
+        bool _jitEnable = false;
         unsigned _maxBlockSize;
         bool _literalOptimizations;
         bool _branchOptimizations;
 #   ifdef HAVE_JIT_FASTMEM
-        bool _fastMemory;
+        bool _fastMemory = false;
 #   endif
 #endif
 

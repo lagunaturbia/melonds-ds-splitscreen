@@ -70,6 +70,14 @@ namespace MelonDsDs::config {
         static constexpr const char *const WFC_DNS = "melonds_firmware_wfc_dns";
     }
 
+    namespace splitscreen {
+        inline constexpr char CATEGORY[] = "splitscreen";
+        inline constexpr char PLAYER_COUNT[] = "melonds_splitscreen_player_count";
+        inline constexpr char LINK_MODE[] = "melonds_splitscreen_link_mode";
+        inline constexpr char MULTICARD[] = "multicard";
+        inline constexpr char DOWNLOAD_PLAY[] = "download_play";
+    }
+
     namespace network {
         static constexpr const char *const CATEGORY = "network";
         static constexpr const char *const NETWORK_MODE = "melonds_network_mode";

@@ -34,7 +34,35 @@
 // All descriptive text uses semantic line breaks. https://sembr.org
 
 namespace MelonDsDs::config::definitions {
+    constexpr retro_core_option_v2_definition SplitscreenPlayerCount {
+        splitscreen::PLAYER_COUNT,
+        "Number of Players",
+        nullptr,
+        "Preselects how many Nintendo DS consoles to run. "
+        "You can change the number on the player selection screen. Reopen content to apply this setting.",
+        nullptr,
+        splitscreen::CATEGORY,
+        {{"2", nullptr}, {"3", nullptr}, {"4", nullptr}, {nullptr, nullptr}},
+        "2"
+    };
+
+    constexpr retro_core_option_v2_definition SplitscreenLinkMode {
+        splitscreen::LINK_MODE,
+        "Local Multiplayer Mode",
+        nullptr,
+        "Preselects Multi-Card or Download Play. "
+        "You can switch modes on the player selection screen. "
+        "Download Play requires native DS BIOS and bootable firmware. Reopen content to apply this setting.",
+        nullptr,
+        splitscreen::CATEGORY,
+        {{splitscreen::MULTICARD, "Multi-Card"}, {splitscreen::DOWNLOAD_PLAY, "Download Play"}, {nullptr, nullptr}},
+        splitscreen::MULTICARD
+    };
+
     constexpr std::array CoreOptionDefinitions {
+        SplitscreenPlayerCount,
+        SplitscreenLinkMode,
+
         MicInput,
         MicInputButton,
         BitDepth,
@@ -45,9 +73,6 @@ namespace MelonDsDs::config::definitions {
         JitBlockSize,
         JitBranchOptimizations,
         JitLiteralOptimizations,
-#   ifdef HAVE_JIT_FASTMEM
-        JitFastMemory,
-#   endif
 #endif
 
         LanMacAddressMode,
