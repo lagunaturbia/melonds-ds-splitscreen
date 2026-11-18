@@ -1,4 +1,4 @@
-melonDS DS Splitscreen 1.1
+melonDS DS Splitscreen 1.2
 RetroBat / RetroArch para Windows x64
 
 INSTALACIÓN
@@ -12,8 +12,15 @@ configurada para núcleos e información de núcleos.
   emulators/retroarch/cores/melondsds_splitscreen_libretro.dll
   emulators/retroarch/info/melondsds_splitscreen_libretro.info
 
-En RetroArch, la información del núcleo muestra Splitscreen 1.1.
-Se usan los mismos archivos de guardado de la versión 1.0.
+En RetroArch, la información del núcleo muestra Splitscreen 1.2.
+Se usan los mismos archivos de guardado de las versiones 1.0 y 1.1.
+
+NOVEDAD EN LA VERSIÓN 1.2
+
+Corregido el bloqueo de Mario Kart DS al confirmar la sala en Multi-Card.
+El enlace termina la espera cuando los invitados han contestado, incluso
+si alguna respuesta llega sin datos. Verificado con dos jugadores en
+RetroArch para Windows x64.
 
 SELECTOR Y OPCIONES DEL NÚCLEO
 
@@ -46,8 +53,6 @@ BIOS nativas que se usaban con la versión 1.0. El archivo de firmware original
 se conserva. Si un firmware presenta un menú distinto y queda visible,
 abre Descarga DS con R2. Durante el arranque, A, B o R2 ceden el control
 al mando de ese jugador.
-
-La base es la versión pública 1.0. Mario Kart DS sigue pendiente de diagnóstico.
 
 COMPILACIÓN DEL CÓDIGO FUENTE
 
