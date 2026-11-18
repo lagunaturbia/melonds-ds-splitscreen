@@ -49,6 +49,7 @@ namespace MelonDsDs {
         struct ReplyStats {
             uint64_t requests = 0;
             uint64_t complete = 0;
+            uint64_t answeredWithoutAllPayloads = 0;
             uint64_t peersUnavailable = 0;
         };
         void RunMenu() noexcept;

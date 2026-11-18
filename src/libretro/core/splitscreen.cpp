@@ -35,7 +35,7 @@
 using namespace MelonDsDs;
 
 namespace {
-constexpr auto HostPacketWait = std::chrono::microseconds(250);
+constexpr auto HostPacketWait = std::chrono::microseconds(2000);
 constexpr unsigned DismissSplashAfter = 90;
 constexpr unsigned DismissSplashInterval = 60;
 constexpr unsigned GuestBootTimeout = 600;
@@ -429,8 +429,9 @@ Splitscreen::~Splitscreen() {
             player->FlushSave(true);
             const auto& stats = _replyStats[player->index];
             if (stats.requests) {
-                retro::info("DS local link P{} replies: {} requests, {} complete, {} incomplete when peers stopped progressing",
-                            player->index + 1, stats.requests, stats.complete, stats.peersUnavailable);
+                retro::info("DS local link P{} replies: {} requests, {} with all payloads, {} finished with missing payloads, {} interrupted",
+                            player->index + 1, stats.requests, stats.complete, stats.answeredWithoutAllPayloads,
+                            stats.peersUnavailable);
             }
         }
     }
@@ -556,20 +557,20 @@ uint16_t Splitscreen::ReceiveReplies(int player, uint8_t* data, uint64_t timesta
     // even when the OS did not schedule their threads for a few milliseconds.
     auto& stats = _replyStats[player];
     ++stats.requests;
-    uint16_t received = 0;
+    melonDS::LocalMP::ReplyPoll replies;
+    const auto recordFinished = [&] {
+        if ((replies.Payloads & mask) == mask) ++stats.complete;
+        else ++stats.answeredWithoutAllPayloads;
+        return replies.Payloads;
+    };
     while (true) {
         const auto count = PacketCount(player);
-        received |= Link().RecvReplies(player, data, timestamp, mask & ~received);
-        if ((received & mask) == mask) {
-            ++stats.complete;
-            return received;
-        }
+        if (Link().PollReplies(player, data, timestamp, mask, replies)) return recordFinished();
         if (!WaitForPeers(player, count, std::nullopt)) {
             // One final poll covers a reply published as the wait was ending.
-            received |= Link().RecvReplies(player, data, timestamp, mask & ~received);
-            if ((received & mask) == mask) ++stats.complete;
-            else ++stats.peersUnavailable;
-            return received;
+            if (Link().PollReplies(player, data, timestamp, mask, replies)) return recordFinished();
+            ++stats.peersUnavailable;
+            return replies.Payloads;
         }
     }
 }
