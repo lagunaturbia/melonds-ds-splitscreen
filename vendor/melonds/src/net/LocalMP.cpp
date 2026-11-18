@@ -296,25 +296,26 @@ int LocalMP::RecvHostPacket(int inst, u8* packet, u64* timestamp)
 
 u16 LocalMP::RecvReplies(int inst, u8* packets, u64 timestamp, u16 aidmask)
 {
-    u16 ret = 0;
-    const u16 myinstmask = (1 << inst);
-    u16 curinstmask;
+    ReplyPoll replies;
+    PollReplies(inst, packets, timestamp, aidmask, replies);
+    return replies.Payloads;
+}
 
+bool LocalMP::PollReplies(int inst, u8* packets, u64 timestamp, u16 aidmask, ReplyPoll& replies)
+{
     Mutex_Lock(MPQueueLock);
-    curinstmask = MPStatus.ConnectedBitmask;
+    const u16 clients = MPStatus.ConnectedBitmask & ~(1u << inst);
     Mutex_Unlock(MPQueueLock);
 
-    // if all clients have left: return early
-    if ((myinstmask & curinstmask) == curinstmask)
-        return 0;
+    const auto done = [&] {
+        return (replies.Responders & clients) == clients
+            || (replies.Payloads & aidmask) == aidmask;
+    };
 
-    for (;;)
+    while (!done())
     {
         if (!Semaphore_TryWait(SemPool[16+inst], RecvTimeout))
-        {
-            // no more replies available
-            return ret;
-        }
+            return false;
 
         Mutex_Lock(MPQueueLock);
 
@@ -327,12 +328,13 @@ u16 LocalMP::RecvReplies(int inst, u8* packets, u64 timestamp, u16 aidmask)
             ReplyReadOffset[inst] = MPStatus.ReplyWriteOffset;
             Semaphore_Reset(SemPool[16 + inst]);
             Mutex_Unlock(MPQueueLock);
-            return 0;
+            return false;
         }
 
         const u32 aid = pktheader.Type >> 16;
-        if (pktheader.SenderID == inst || aid == 0 || aid >= 16 || !(aidmask & (1u << aid))
-            || (timestamp > 32 && pktheader.Timestamp < timestamp - 32))
+        const bool wrongAid = aid == 0 || aid >= 16 || !(aidmask & (1u << aid));
+        const bool stale = timestamp > 32 && pktheader.Timestamp < timestamp - 32;
+        if (pktheader.SenderID >= 16 || pktheader.SenderID == inst || stale || (pktheader.Length && wrongAid))
         {
             // skip this packet
             ReplyReadOffset[inst] += pktheader.Length;
@@ -349,17 +351,16 @@ u16 LocalMP::RecvReplies(int inst, u8* packets, u64 timestamp, u16 aidmask)
             FIFORead(inst, 1, &packets[(aid-1)*1024], bytes);
             if (pktheader.Length > 1024)
                 ReplyReadOffset[inst] = (ReplyReadOffset[inst] + pktheader.Length - bytes) % kReplyQueueSize;
-            ret |= (1 << aid);
+            replies.Payloads |= (1u << aid);
         }
 
-        if ((ret & aidmask) == aidmask)
-        {
-            Mutex_Unlock(MPQueueLock);
-            return ret;
-        }
+        // An empty marker acknowledges the command without supplying a Wi-Fi
+        // payload. Keep that distinction across nonblocking polls.
+        replies.Responders |= (1u << pktheader.SenderID);
 
         Mutex_Unlock(MPQueueLock);
     }
+    return true;
 }
 
 }

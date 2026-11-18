@@ -61,6 +61,13 @@ public:
     int RecvHostPacket(int inst, u8* data, u64* timestamp);
     u16 RecvReplies(int inst, u8* data, u64 timestamp, u16 aidmask);
 
+    struct ReplyPoll
+    {
+        u16 Payloads = 0;
+        u16 Responders = 0;
+    };
+    bool PollReplies(int inst, u8* data, u64 timestamp, u16 aidmask, ReplyPoll& replies);
+
 private:
     void FIFORead(int inst, int fifo, void* buf, int len) noexcept;
     void FIFOWrite(int inst, int fifo, void* buf, int len) noexcept;
