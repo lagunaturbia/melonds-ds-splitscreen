@@ -1,4 +1,4 @@
-melonDS DS Splitscreen 1.2
+melonDS DS Splitscreen 1.3
 RetroBat / RetroArch para Windows x64
 
 INSTALACIÓN
@@ -12,15 +12,23 @@ configurada para núcleos e información de núcleos.
   emulators/retroarch/cores/melondsds_splitscreen_libretro.dll
   emulators/retroarch/info/melondsds_splitscreen_libretro.info
 
-En RetroArch, la información del núcleo muestra Splitscreen 1.2.
+En RetroArch, la información del núcleo muestra Splitscreen 1.3.
 Se usan los mismos archivos de guardado de las versiones 1.0 y 1.1.
 
-NOVEDAD EN LA VERSIÓN 1.2
+NOVEDADES EN LA VERSIÓN 1.3
 
-Corregido el bloqueo de Mario Kart DS al confirmar la sala en Multi-Card.
-El enlace termina la espera cuando los invitados han contestado, incluso
-si alguna respuesta llega sin datos. Verificado con dos jugadores en
-RetroArch para Windows x64.
+- Touch Mode en Auto permite usar el clic izquierdo o tocar la pantalla
+  inferior de cualquiera de las consolas. El stick derecho y R2 siguen
+  disponibles. Pointer utiliza el puntero y Joystick utiliza el mando.
+- Menú rápido > Opciones del núcleo > Vídeo > Threaded Software Renderer
+  permite activar el renderizado 3D por software en un hilo separado por
+  cada DS. Se aplica al volver a la partida. Por defecto está desactivado.
+- Resolución nativa fija de 256 × 192 por pantalla. Puedes seguir usando
+  Vulkan como controlador de vídeo de RetroArch.
+
+Esta compilación usa la base publicada como splitscreen-v1.2, que incluye
+el arreglo de la sala de Mario Kart DS. Conserva el selector de jugadores,
+Descarga DS, las rutas de guardado y el audio del jugador 1.
 
 SELECTOR Y OPCIONES DEL NÚCLEO
 

@@ -106,16 +106,15 @@ include(cmake/ConfigureDependencies.cmake)
 
 set(MELONDSDS_NAME "melonDS DS Splitscreen")
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    set(MELONDSDS_VERSION "${CMAKE_PROJECT_VERSION}")
+    set(MELONDSDS_VERSION "1.3")
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-    set(MELONDSDS_VERSION "${CMAKE_PROJECT_VERSION} (RelWithDebInfo)")
+    set(MELONDSDS_VERSION "1.3 (RelWithDebInfo)")
 elseif (GIT_STATE)
     set(MELONDSDS_VERSION "${GIT_STATE}-${CMAKE_BUILD_TYPE}-upstream-${MELONDS_REPOSITORY_TAG}")
 else ()
     set(MELONDSDS_VERSION "v${CMAKE_PROJECT_VERSION}-nogit-${CMAKE_BUILD_TYPE}-upstream-${MELONDS_REPOSITORY_TAG}")
 endif()
 
-string(APPEND MELONDSDS_VERSION " (Splitscreen 1.2)")
 message(STATUS "${MELONDSDS_NAME} version string: '${MELONDSDS_VERSION}'")
 configure_file("${CMAKE_SOURCE_DIR}/melondsds_libretro.info.in" "${CMAKE_CURRENT_BINARY_DIR}/melondsds_splitscreen_libretro.info")
 

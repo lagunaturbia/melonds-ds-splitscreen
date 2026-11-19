@@ -16,3 +16,6 @@ Upstream source for this build:
 Each bundled dependency is an unmodified Git archive of the resolved
 revision, except for the LocalMP changes in melonDS. Revision identifiers
 for all dependencies are listed in SOURCE-REVISIONS.txt.
+
+Splitscreen 1.3 is based on the stable splitscreen-v1.2 source (d931c25ee7fa24f7e373f6aa94bb7f6c65d030d6).
+It adds pointer input and connects the existing threaded software 3D option to each DS.
