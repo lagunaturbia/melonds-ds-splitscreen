@@ -120,9 +120,9 @@ namespace MelonDsDs::config::definitions {
         config::video::THREADED_RENDERER,
         "Threaded Software Renderer",
         nullptr,
-        "If enabled, the software renderer will run on a separate thread. "
+        "If enabled, the software 3D renderer of each Nintendo DS will run on a separate thread. "
         "Changes take effect immediately. "
-        "If unsure, leave this enabled.",
+        "Disabled uses the same threading as previous stable releases.",
         nullptr,
         config::video::CATEGORY,
         {
@@ -130,7 +130,7 @@ namespace MelonDsDs::config::definitions {
             {MelonDsDs::config::values::ENABLED, nullptr},
             {nullptr, nullptr},
         },
-        MelonDsDs::config::values::ENABLED
+        MelonDsDs::config::values::DISABLED
     };
 #endif
 
