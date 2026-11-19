@@ -22,6 +22,7 @@ namespace retro {
 
 namespace MelonDsDs {
     class CoreConfig;
+    enum class TouchMode;
     class CoreState;
 
     class Splitscreen {
@@ -46,6 +47,11 @@ namespace MelonDsDs {
     private:
         struct Player;
         struct PlayerMenu;
+        struct PointerTouch {
+            unsigned player;
+            unsigned x;
+            unsigned y;
+        };
         struct ReplyStats {
             uint64_t requests = 0;
             uint64_t complete = 0;
@@ -56,7 +62,9 @@ namespace MelonDsDs {
         void StartPlayers();
         void Boot(Player& player);
         void DrawPlayer(const Player& player, unsigned index) noexcept;
-        void UpdateInput(Player& player, unsigned index) noexcept;
+        std::optional<PointerTouch> PollTouch() const noexcept;
+        void UpdateInput(Player& player, unsigned index, const std::optional<PointerTouch>& touch) noexcept;
+        void RefreshInputAndVideoOptions() noexcept;
         void FrameFinished(unsigned index) noexcept;
         uint64_t PacketCount(int player) noexcept;
         bool WaitForPeers(int player, uint64_t previousCount,
@@ -86,6 +94,8 @@ namespace MelonDsDs {
         std::unique_ptr<PlayerMenu> _menu;
         unsigned _playerCount = MinPlayers;
         unsigned _frameWidth = ScreenWidth * MinPlayers;
+        TouchMode _touchMode;
+        bool _threadedSoftware;
         bool _downloadPlay = false;
         uint32_t _menuButtonsToRelease = 0;
     };

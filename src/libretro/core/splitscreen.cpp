@@ -42,6 +42,13 @@ constexpr unsigned GuestBootTimeout = 600;
 constexpr unsigned TouchFrames = 6;
 constexpr unsigned StableMenuFrames = 8;
 
+void SetSoftwareRendererThread(melonDS::NDS& console, bool enabled) {
+    melonDS::RendererSettings settings{};
+    settings.ScaleFactor = 1;
+    settings.Threaded = enabled;
+    console.GetRenderer().SetRenderSettings(settings);
+}
+
 void ConfigureGuestFirmware(melonDS::Firmware& firmware, int year) noexcept {
     constexpr unsigned SettingsLost = 1u << 9;
     constexpr unsigned SettingsConfigured = 0xec00;
@@ -304,7 +311,8 @@ struct Splitscreen::PlayerMenu {
 };
 
 Splitscreen::Splitscreen(CoreState& core, const CoreConfig& coreConfig, const retro::GameInfo& game)
-    : _core(core), _config(coreConfig), _game(game)
+    : _core(core), _config(coreConfig), _game(game),
+      _touchMode(coreConfig.TouchMode()), _threadedSoftware(coreConfig.ThreadedSoftRenderer())
 {
     const auto rom = game.GetData();
     if (rom.size() < sizeof(melonDS::NDSHeader)) {
@@ -380,6 +388,7 @@ void Splitscreen::StartPlayers() {
         const bool hasCart = !_downloadPlay || i == 0;
         const retro::GameInfo* content = hasCart ? &_game : nullptr;
         player->console = CreateConsole(_core, config, content, nullptr, nullptr, player.get());
+        SetSoftwareRendererThread(*player->console, _threadedSoftware);
         if (!hasCart && player->console->NeedsDirectBoot()) {
             throw content_exception("Download Play requires native Nintendo DS BIOS files and bootable firmware.");
         }
@@ -420,6 +429,8 @@ void Splitscreen::StartPlayers() {
         player->dirty = false;
     }
     retro::info("Started {} Nintendo DS consoles with an in-process wireless link.", _playerCount);
+    retro::info("Splitscreen threaded software renderer: {} (native 1x).",
+        _threadedSoftware ? "enabled" : "disabled");
     if (_downloadPlay) retro::info("DS Download Play: player 1 has the cartridge; guests open the Download Play search.");
 }
 
@@ -575,7 +586,27 @@ uint16_t Splitscreen::ReceiveReplies(int player, uint8_t* data, uint64_t timesta
     }
 }
 
-void Splitscreen::UpdateInput(Player& player, unsigned index) noexcept {
+std::optional<Splitscreen::PointerTouch> Splitscreen::PollTouch() const noexcept {
+    if (_touchMode == TouchMode::Joystick ||
+        !retro::input_state(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_PRESSED)) {
+        return std::nullopt;
+    }
+
+    const int x = retro::input_state(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
+    const int y = retro::input_state(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
+    constexpr int PointerLimit = 0x7fff;
+    if (x < -PointerLimit || y < 0) return std::nullopt;
+
+    // Libretro reports coordinates for the whole displayed game image.
+    const unsigned nativeWidth = ScreenWidth * _playerCount;
+    const unsigned pixelX = std::min(nativeWidth - 1,
+        static_cast<unsigned>(x + PointerLimit) * nativeWidth / (2 * PointerLimit));
+    const unsigned pixelY = std::min(FrameHeight - 1,
+        static_cast<unsigned>(y + PointerLimit) * FrameHeight / (2 * PointerLimit));
+    return PointerTouch{pixelX / ScreenWidth, pixelX % ScreenWidth, pixelY - ScreenHeight};
+}
+
+void Splitscreen::UpdateInput(Player& player, unsigned index, const std::optional<PointerTouch>& touch) noexcept {
     InputPollResult input{};
     if (_controllerEnabled[index]) {
         input.JoypadButtons = retro::joypad_state(index);
@@ -588,19 +619,27 @@ void Splitscreen::UpdateInput(Player& player, unsigned index) noexcept {
     player.joypad.Update(input);
     player.joypad.Apply(*player.console);
 
-    auto moveCursor = [](float position, int axis, float limit) {
-        if (axis > -5500 && axis < 5500) return position;
-        return std::clamp(position + (axis / 32768.0f) * 4.0f, 0.0f, limit);
-    };
-    player.cursorX = moveCursor(player.cursorX, input.AnalogCursorDirection.x, ScreenWidth - 1);
-    player.cursorY = moveCursor(player.cursorY, input.AnalogCursorDirection.y, ScreenHeight - 1);
-
     constexpr auto TouchButton = 1u << RETRO_DEVICE_ID_JOYPAD_R2;
-    if (input.JoypadButtons & (TouchButton | (1u << RETRO_DEVICE_ID_JOYPAD_A) | (1u << RETRO_DEVICE_ID_JOYPAD_B))) {
+    const bool pointerTouch = touch && touch->player == index;
+    const bool joystickTouch = _touchMode != TouchMode::Pointer && (input.JoypadButtons & TouchButton);
+    if (pointerTouch) {
+        player.cursorX = touch->x;
+        player.cursorY = touch->y;
+    } else if (_touchMode != TouchMode::Pointer) {
+        auto moveCursor = [](float position, int axis, float limit) {
+            if (axis > -5500 && axis < 5500) return position;
+            return std::clamp(position + (axis / 32768.0f) * 4.0f, 0.0f, limit);
+        };
+        player.cursorX = moveCursor(player.cursorX, input.AnalogCursorDirection.x, ScreenWidth - 1);
+        player.cursorY = moveCursor(player.cursorY, input.AnalogCursorDirection.y, ScreenHeight - 1);
+    }
+
+    if (pointerTouch || joystickTouch ||
+        (input.JoypadButtons & ((1u << RETRO_DEVICE_ID_JOYPAD_A) | (1u << RETRO_DEVICE_ID_JOYPAD_B)))) {
         player.guestBoot.Cancel();
     }
     if (player.guestBoot.ApplyTouch(*player.console, ScreenWidth, index + 1)) return;
-    if (input.JoypadButtons & TouchButton) {
+    if (pointerTouch || joystickTouch) {
         player.console->TouchScreen(static_cast<uint16_t>(player.cursorX), static_cast<uint16_t>(player.cursorY));
     } else {
         player.console->ReleaseScreen();
@@ -635,13 +674,34 @@ void Splitscreen::DrawPlayer(const Player& player, unsigned index) noexcept {
     }
 }
 
+void Splitscreen::RefreshInputAndVideoOptions() noexcept {
+    if (!retro::is_variable_updated()) return;
+
+    _touchMode = ParseTouchMode(retro::get_variable(config::screen::TOUCH_MODE)).value_or(TouchMode::Auto);
+#if defined(HAVE_THREADS) && defined(HAVE_THREADED_RENDERER)
+    const bool threaded = ParseBoolean(retro::get_variable(config::video::THREADED_RENDERER)).value_or(false);
+    if (threaded == _threadedSoftware) return;
+
+    // The previous frame has joined all the emulation workers. Change the
+    // renderer before any worker can queue another frame.
+    for (auto& player : _players) {
+        if (player) SetSoftwareRendererThread(*player->console, threaded);
+    }
+    _threadedSoftware = threaded;
+    retro::info("Splitscreen threaded software renderer: {} (native 1x).",
+        _threadedSoftware ? "enabled" : "disabled");
+#endif
+}
+
 void Splitscreen::Run() noexcept {
+    RefreshInputAndVideoOptions();
     retro::input_poll();
     if (_menu) {
         RunMenu();
         return;
     }
-    for (unsigned i = 0; i < _playerCount; ++i) UpdateInput(*_players[i], i);
+    const auto touch = PollTouch();
+    for (unsigned i = 0; i < _playerCount; ++i) UpdateInput(*_players[i], i, touch);
 
     // Let all consoles run before waiting, so any peer can answer a Wi-Fi command.
     {
